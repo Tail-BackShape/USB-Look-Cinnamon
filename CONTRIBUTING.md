@@ -1,6 +1,6 @@
 # Contributing / 貢献ガイド
 
-USB-Look-Cinnamonへの改善提案やバグ報告を歓迎する。現在は設計段階であり、動作するApplet本体はまだない。
+USB-Look-Cinnamonへの改善提案やバグ報告を歓迎する。現在は実装・テスト段階であり、実機検証と安定版リリースはまだ完了していない。
 
 ## 日本語
 
@@ -13,7 +13,7 @@ USB-Look-Cinnamonへの改善提案やバグ報告を歓迎する。現在は設
 
 ## English
 
-Contributions and bug reports are welcome. The project is in the design phase and is not yet installable.
+Contributions and bug reports are welcome. The project is in active implementation; hardware validation and a stable release are still pending.
 
 - Read the [design specification](docs/superpowers/specs/2026-10-22-usb-look-cinnamon-design.md) and existing issues before proposing changes.
 - Include distro/Cinnamon versions, reproduction steps, expected results, and actual results in bug reports.

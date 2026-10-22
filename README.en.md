@@ -1,49 +1,65 @@
 # USB-Look-Cinnamon
 
-[日本語README](README.md)
+[日本語README](README.md) · [Approved design (Japanese)](docs/superpowers/specs/2026-10-22-usb-look-cinnamon-design.md) · [Implementation plan](docs/superpowers/plans/2026-10-22-usb-look-cinnamon.md)
 
-> **Pre-implementation: this repository currently contains a design specification, not an installable Cinnamon applet.**
+> **Development snapshot v0.1.0 — not hardware-validated.** Source and mocked tests exist, but acceptance testing on Linux Mint / Cinnamon 6.6.7 has not been completed. This is not a stable release.
 
-USB-Look-Cinnamon is a planned lightweight open-source applet for the Linux Mint Cinnamon panel. It aims to show connected USB devices, their identities, and device-type-specific usage information.
+USB-Look-Cinnamon is a lightweight, read-only Cinnamon panel applet that shows connected USB devices, their identifiers, and usage evidence where observable.
 
-## Planned features
+## Implemented in source
 
-- List USB serial devices, debug probes, storage, HID, cameras, audio, network adapters, hubs, and other USB devices
-- Display available VID/PID, product, device nodes, and kernel driver information
-- Update on USB connect and disconnect events
-- Enable or disable monitoring **by device category only** (no per-device toggles)
-- Where observable, show processes and PIDs opening serial ports and other applicable device nodes
-- Inherit Cinnamon's system font and light/dark theme
-- Report an explicit Unknown status when usage information cannot be determined
+- Nine device categories, with **per-category** on/off switches only: serial, debug, storage, HID, camera, audio, network, hubs, other
+- GUdev hotplug monitoring, physical-device deduplication, composite-interface grouping
+- Panel icon/count using the native Cinnamon font and theme
+- Search, collapsible categories and details, device paths/drivers, clipboard copy
+- Optional `lsof` process/PID inspection for applicable nodes; `findmnt` mount state for storage
+- Usage checks only while the popup is visible; stale results invalidated after close, removal, or filter changes
+- Optional connect/disconnect notifications (disabled by default)
 
-USB usage cannot be measured consistently for all device classes. “Not in use” does not guarantee exclusive access or future availability.
+No generic, reliable exclusive-use state exists for all USB device classes. A `Not in use` label describes only what this user could observe; it cannot guarantee availability. `Unknown` is used when evidence is insufficient.
 
-## Project status
+## Requirements
 
-- [x] Core requirements agreed
-- [x] UI and interaction design agreed
-- [x] Design specification drafted
-- [ ] Final specification review and implementation plan
-- [ ] Applet implementation
-- [ ] Automated and real-device testing
-- [ ] First release
+- Linux Mint / Cinnamon 6.6.7 is the initial target (**not yet tested on hardware**)
+- Cinnamon JavaScript runtime and GUdev GI typelib (`gir1.2-gudev-1.0` on Ubuntu/Mint distributions)
+- Optional `lsof` for process inspection; `findmnt` (typically from `util-linux`) for mount inspection
+- No mandatory daemon, Python virtual environment, or Docker
 
-**There is no installable build yet.** Installation instructions will be added after implementation and verification.
+On Mint/Ubuntu, install dependencies if missing:
 
-## Platform and architecture
+```bash
+sudo apt install gir1.2-gudev-1.0
+sudo apt install lsof
+```
 
-The initial validation target is **Linux Mint / Cinnamon 6.6.7**, with future consideration of Cinnamon 6.x compatibility. The intended stack is CJS/JavaScript with GUdev, without a mandatory additional resident daemon.
+## Local installation (experimental)
 
-See the [design specification (Japanese)](docs/superpowers/specs/2026-10-22-usb-look-cinnamon-design.md).
+From the repository root:
 
-## Safety and scope
+```bash
+sh scripts/install-local.sh
+```
 
-The first release is intended to be **read-only**. USB reset/disconnect, forced process termination, firmware flashing, and IDE-project association are not in scope. No remote service is required, and sensitive device identifiers should not be included in diagnostic logs.
+The script copies the applet into `~/.local/share/cinnamon/applets/usb-look-cinnamon@tail-backshape/` (or under `XDG_DATA_HOME`). It refuses to replace an existing directory. For upgrades, back up and manually replace the previous applet.
 
-## Contributing and license
+Enable **USB-Look-Cinnamon** in Cinnamon **System Settings → Applets**. Left-click to open the viewer; right-click for Cinnamon's native menu. Configure the nine category switches from the applet settings.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance and [CHANGELOG.md](CHANGELOG.md) for project history.
+For removal, first remove the applet from the panel, then inspect and delete only its dedicated applet directory. The installer never writes to system directories.
 
-Copyright (c) 2026 Tail-BackShape. Licensed under the [MIT License](LICENSE).
+## Development and testing
 
-The repository is currently private and is being prepared for a potential future public open-source release.
+```bash
+npm test
+npm run check
+sh -n scripts/install-local.sh
+```
+
+Node.js 18+ tests use mocked GUdev/Cinnamon fixtures. They do **not** substitute for GUI, hardware, permission, hotplug, and resource tests described in [the manual test matrix](docs/test-matrix.md).
+
+## Safety and license
+
+The applet does not open monitored devices, reset USB, terminate processes, force unmounts, flash firmware, elevate privileges, or send data to an external service. IDE-to-port associations are intentionally out of scope.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md). Copyright (c) 2026 Tail-BackShape. Licensed under [MIT](LICENSE).
+
+The repository remains private until its owner decides on a future open-source publication.
