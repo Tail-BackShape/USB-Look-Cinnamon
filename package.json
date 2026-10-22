@@ -1,0 +1,10 @@
+{
+  "name": "usb-look-cinnamon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cinnamon USB device monitor",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check usb-look-cinnamon@tail-backshape/files/usb-look-cinnamon@tail-backshape/deviceModel.js"
+  }
+}
