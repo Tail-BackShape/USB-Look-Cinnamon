@@ -51,7 +51,8 @@ function parseMounts(stdout, stderr, exitCode) {
     return unknown((stderr || '').trim() || 'Mount state unavailable');
 }
 
-async function inspectDevice(device, runner, cancellable) {
+// Cinnamon's auto-export scanner recognizes var, but not async function declarations.
+var inspectDevice = async function(device, runner, cancellable) {
     const categories = device && Array.isArray(device.categories) ? device.categories : [];
     const storage = categories.includes('storage');
     const inspectOpeners = categories.some(c => ['serial','camera','debug'].includes(c));
@@ -104,7 +105,7 @@ async function inspectDevice(device, runner, cancellable) {
         return {status:'Not in use',reason:'No process visible to this user; not proof of exclusivity',
             processes:[],mounts:[],checkedAt:Date.now()};
     return unknown(results.find(r => r.status === 'Unknown')?.reason || 'Unknown usage state');
-}
+};
 
 // A cancelled asynchronous GIO operation does not terminate its subprocess.
 // Terminate only the lsof/findmnt subprocess that this runner created.

@@ -7,6 +7,12 @@ const moduleApi=loadGjsModule(path.join(__dirname,
     '../usb-look-cinnamon@tail-backshape/files/usb-look-cinnamon@tail-backshape/usageInspector.js'),
     ['parseLsof','parseMounts','inspectDevice','createGioRunner']);
 const serial={id:'a',categories:['serial'],nodes:['/dev/ttyACM0']};
+test('Cinnamon module loader exports the asynchronous device inspector',async()=>{
+    assert.equal(typeof moduleApi.inspectDevice,'function');
+    const result=await moduleApi.inspectDevice({categories:['hid'],nodes:[]});
+    assert.equal(result.status,'Unknown');
+    assert.match(result.reason,/No reliable generic busy indicator/);
+});
 test('lsof PID and command lines yield Busy with precise evidence',()=>{
     const result=moduleApi.parseLsof('p123\ncminicom\np456\ncpython3\n','',0);
     assert.equal(result.status,'Busy');
