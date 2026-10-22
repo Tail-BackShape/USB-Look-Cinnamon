@@ -8,6 +8,7 @@ const Settings = imports.ui.settings;
 const Mainloop = imports.mainloop;
 const Main = imports.ui.main;
 const Gio = imports.gi.Gio;
+const GLib = imports.gi.GLib;
 const St = imports.gi.St;
 
 const CATEGORY_LABELS = Object.freeze({
@@ -43,7 +44,7 @@ class UsbLookApplet extends Applet.TextIconApplet {
         this.set_applet_label('0');
 
         this.menu = new Applet.AppletPopupMenu(this, orientation);
-        this._menuManager = new PopupMenu.PopupMenuManager(this);
+        // Reuse the manager owning Cinnamon's right-click context menu.
         this._menuManager.addMenu(this.menu);
         this.menu.connect('open-state-changed', (menu, open) => {
             if (open && !this._removed) {
@@ -64,10 +65,10 @@ class UsbLookApplet extends Applet.TextIconApplet {
             () => this._onConfigurationChange());
 
         try {
-            if (metadata.path && !imports.searchPath.includes(metadata.path))
-                imports.searchPath.unshift(metadata.path);
-            this._model = imports.deviceModel;
-            const Registry = imports.deviceRegistry;
+            // Cinnamon 6.6 injects a per-xlet require(path) into applet.js.
+            // Global imports.searchPath would pollute the entire shell.
+            this._model = require('./deviceModel');
+            const Registry = require('./deviceRegistry');
             const GUdev = imports.gi.GUdev;
             if (!GUdev || !GUdev.Client) throw new Error('GUdev is unavailable');
             const client = GUdev.Client.new(SUBSYSTEMS);
@@ -77,10 +78,10 @@ class UsbLookApplet extends Applet.TextIconApplet {
                     Mainloop.timeout_add(delayMs, () => {callback();return false;}),
                 cancel: token => Mainloop.source_remove(token)
             };
-            const Inspector = imports.usageInspector;
-            const Probe = imports.probeSession;
+            const Inspector = require('./usageInspector');
+            const Probe = require('./probeSession');
             this._probeSession = new Probe.ProbeSession(
-                Inspector, Inspector.createGioRunner(Gio), scheduler,
+                Inspector, Inspector.createGioRunner(Gio, GLib), scheduler,
                 () => new Gio.Cancellable(), 5000);
             this._registry = new Registry.DeviceRegistry(client, scheduler, this._model);
             this._registry.start(change => this._onRegistryUpdate(change));

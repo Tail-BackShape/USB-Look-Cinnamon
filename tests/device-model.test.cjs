@@ -92,3 +92,11 @@ test('filters by category OR and searches name, VID:PID and node', () => {
     off.serial = true;
     assert.equal(model.filterDevices(d, off, 'esp32').length, 1);
 });
+
+test('physical ST-LINK product remains debug when child HID interface exists',()=>{
+    const found=plain(model.buildDevices([
+        physical(base,{product:'ST-LINK/V3',idVendor:'0483',idProduct:'374e'}),
+        iface('1-2:1.0',{}, {bInterfaceClass:'03'},'usbhid')
+    ]));
+    assert.deepEqual(found[0].categories,['debug','hid']);
+});

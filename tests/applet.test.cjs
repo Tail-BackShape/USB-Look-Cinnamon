@@ -11,6 +11,7 @@ const reg = loadGjsModule(path.join(inner,'deviceRegistry.js'),['DeviceRegistry'
 const probe = loadGjsModule(path.join(inner,'probeSession.js'),['ProbeSession']);
 const usage = loadGjsModule(path.join(inner,'usageInspector.js'),['inspectDevice','createGioRunner']);
 class AppletBase {
+    constructor(){this._menuManager={nativeContextMenu:true,addMenu:()=>{}};}
     set_applet_icon_symbolic_name(name){this.icon=name;}
     set_applet_label(label){this.label=label;}
     set_applet_tooltip(text){this.tooltip=text;}
@@ -48,9 +49,9 @@ function fixture() {
 }
 function createApplet(client=fixture()) {
     let settings;const notifications=[];const clipboard={value:null,set_text:(type,value)=>{clipboard.value=value;}};
-    const context={imports:{
+    const localModules={'./deviceModel':model,'./deviceRegistry':reg,'./probeSession':probe,'./usageInspector':usage};
+    const context={require:p=>{if(!(p in localModules))throw Error('Non-local import: '+p);return localModules[p];},imports:{
         searchPath:[],
-        deviceModel:model,deviceRegistry:reg,probeSession:probe,usageInspector:usage,
         ui:{
             applet:{TextIconApplet:AppletBase,AppletPopupMenu:Menu},
             popupMenu:{PopupMenuManager:class{addMenu(){}},PopupMenuItem:Item,
@@ -67,11 +68,13 @@ function createApplet(client=fixture()) {
     const script=fs.readFileSync(path.join(inner,'applet.js'),'utf8');
     vm.runInNewContext(script,context,{filename:'applet.js'});
     const applet=context.main({uuid:'usb-look-cinnamon@tail-backshape',path:inner},0,24,1);
-    return {applet,settings,notifications,clipboard};
+    return {applet,settings,notifications,clipboard,context};
 }
 test('Cinnamon shell creates icon, enumerates devices and respects category toggles',()=>{
     const {applet,settings}=createApplet();
     assert.ok(applet.icon);
+    assert.equal(applet._model,model,'uses Cinnamon 6.6 local module require');
+    assert.equal(applet._menuManager.nativeContextMenu,true,'preserve Cinnamon context-menu manager');
     assert.equal(applet.label,'1');
     settings.set('show-serial',false);
     assert.equal(applet.label,'0');
@@ -116,5 +119,11 @@ test('copy action uses Cinnamon clipboard and never opens a device',()=>{
     const {applet,clipboard}=createApplet();
     applet._copyText('/sys/usb1/1-2');
     assert.equal(clipboard.value,'/sys/usb1/1-2');
+    applet.on_applet_removed_from_panel();
+});
+
+test('applet never changes process-wide GJS search path',()=>{
+    const {applet,context}=createApplet();
+    assert.deepEqual(Array.from(context.imports.searchPath),[]);
     applet.on_applet_removed_from_panel();
 });

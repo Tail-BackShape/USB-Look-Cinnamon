@@ -108,10 +108,13 @@ function buildDevices(records) {
         }
     }
     for (const [path, target] of devices) {
-        if (target.categories.length === 0) {
-            const physical = source.find(item => item && item.sysfsPath === path &&
-                                               item.devtype === 'usb_device');
-            target.categories = classifyInterface(physical);
+        // Product-level identification (e.g. ST-LINK) must survive child
+        // interfaces that report only generic HID/serial classes.
+        const physical = source.find(item => item && item.sysfsPath === path &&
+                                           item.devtype === 'usb_device');
+        for (const category of classifyInterface(physical)) {
+            if (!target.categories.includes(category))
+                target.categories.push(category);
         }
         // An unknown child does not hide a recognized composite function.
         if (target.categories.length > 1 && target.categories.includes('other'))

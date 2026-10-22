@@ -68,7 +68,7 @@ async function inspectDevice(device, runner, cancellable) {
         try {
             const args = storage ?
                 ['findmnt','--noheadings','--raw','--output','TARGET','--source',node] :
-                ['lsof','-b','-n','-P','-Fpc','--',node];
+                ['lsof','-n','-P','-Fpc','--',node];
             const result = await runner.run(args, cancellable);
             results.push(storage ?
                 parseMounts(result.stdout,result.stderr,result.exitCode) :
@@ -106,27 +106,84 @@ async function inspectDevice(device, runner, cancellable) {
     return unknown(results.find(r => r.status === 'Unknown')?.reason || 'Unknown usage state');
 }
 
-function createGioRunner(Gio) {
+// A cancelled asynchronous GIO operation does not terminate its subprocess.
+// Terminate only the lsof/findmnt subprocess that this runner created.
+function createGioRunner(Gio, GLib, timeoutMs = 5000) {
     return {
-        run(argv,cancellable) {
-            return new Promise((resolve,reject) => {
+        run(argv, cancellable) {
+            return new Promise((resolve, reject) => {
+                if (cancellable && typeof cancellable.is_cancelled === 'function' &&
+                    cancellable.is_cancelled()) {
+                    reject(new Error('Inspection cancelled'));
+                    return;
+                }
+                let proc = null;
+                let cancelledId = 0;
+                let timeoutId = 0;
+                let completed = false;
+
+                function settle(error, result) {
+                    if (completed) return;
+                    completed = true;
+                    if (timeoutId) {
+                        GLib.source_remove(timeoutId);
+                        timeoutId = 0;
+                    }
+                    if (cancelledId && cancellable) {
+                        cancellable.disconnect(cancelledId);
+                        cancelledId = 0;
+                    }
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+
+                function terminate(reason) {
+                    if (completed) return;
+                    if (proc) {
+                        try { proc.force_exit(); } catch (_) {
+                            // The subprocess may already have exited.
+                        }
+                    }
+                    settle(new Error(reason));
+                }
+
                 try {
                     const flags = Gio.SubprocessFlags.STDOUT_PIPE |
-                        Gio.SubprocessFlags.STDERR_PIPE;
-                    const proc = Gio.Subprocess.new(argv,flags);
-                    proc.communicate_utf8_async(null,cancellable || null,(process,res) => {
+                                  Gio.SubprocessFlags.STDERR_PIPE;
+                    proc = Gio.Subprocess.new(argv, flags);
+
+                    // Gio.Cancellable.connect() is a cancellation convenience
+                    // method, not GObject.connect('cancelled', callback).
+                    if (cancellable)
+                        cancelledId = cancellable.connect(
+                            () => terminate('Inspection cancelled'));
+                    if (cancellable && cancellable.is_cancelled()) {
+                        terminate('Inspection cancelled');
+                        return;
+                    }
+                    timeoutId = GLib.timeout_add(
+                        GLib.PRIORITY_DEFAULT, timeoutMs, () => {
+                            terminate('Inspection timeout');
+                            return GLib.SOURCE_REMOVE;
+                        });
+                    proc.communicate_utf8_async(null, null, (process, res) => {
                         try {
                             const finished = process.communicate_utf8_finish(res);
-                            resolve({
-                                stdout: finished[1] || '',stderr:finished[2] || '',
-                                exitCode:process.get_exit_status()
+                            settle(null, {
+                                stdout: finished[1] || '',
+                                stderr: finished[2] || '',
+                                exitCode: process.get_exit_status()
                             });
                         } catch (error) {
-                            reject(error);
+                            settle(error);
                         }
                     });
                 } catch (error) {
-                    reject(error);
+                    // If setup fails after spawning, do not leave a helper.
+                    if (proc && !completed) {
+                        try { proc.force_exit(); } catch (_) {}
+                    }
+                    settle(error);
                 }
             });
         }
