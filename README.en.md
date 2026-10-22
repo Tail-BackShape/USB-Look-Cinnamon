@@ -58,7 +58,7 @@ Node.js 18+ tests use mocked GUdev/Cinnamon fixtures. They do **not** substitute
 
 ## Safety and license
 
-The applet does not open monitored devices, reset USB, terminate processes, force unmounts, flash firmware, elevate privileges, or send data to an external service. IDE-to-port associations are intentionally out of scope.
+The applet does not open monitored devices, reset USB, terminate processes using those devices, force unmounts, flash firmware, elevate privileges, or send data to an external service. Only its own temporary `lsof` / `findmnt` inspection helpers are terminated on cancellation or timeout. IDE-to-port associations are intentionally out of scope.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md). Copyright (c) 2026 Tail-BackShape. Licensed under [MIT](LICENSE).
 
