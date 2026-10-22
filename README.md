@@ -2,7 +2,7 @@
 
 [English README](README.en.md)
 
-> **開発準備中：現在は設計仕様書のみ公開準備中で、インストールできるAppletはまだない。**
+> **開発準備中：現在は設計・ドキュメント整備段階で、インストールできるAppletはまだない。**
 
 USB-Look-Cinnamonは、Linux MintのCinnamonパネルからUSB機器全般の接続状態と識別情報を確認する、軽量なオープンソースAppletを目指すプロジェクトだ。
 
