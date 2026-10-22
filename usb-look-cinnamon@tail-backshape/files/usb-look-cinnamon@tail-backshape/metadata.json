@@ -1,0 +1,8 @@
+{
+  "uuid": "usb-look-cinnamon@tail-backshape",
+  "name": "USB-Look-Cinnamon",
+  "description": "USB device monitor for Cinnamon / Cinnamon向けUSB機器モニター",
+  "icon": "drive-removable-media-usb",
+  "version": "0.1.0",
+  "max-instances": "-1"
+}

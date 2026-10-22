@@ -1,0 +1,57 @@
+{
+  "show-serial": {
+    "type": "switch",
+    "default": true,
+    "description": "USBシリアルを表示"
+  },
+  "show-debug": {
+    "type": "switch",
+    "default": true,
+    "description": "デバッグ機器を表示"
+  },
+  "show-storage": {
+    "type": "switch",
+    "default": true,
+    "description": "ストレージを表示"
+  },
+  "show-hid": {
+    "type": "switch",
+    "default": true,
+    "description": "HIDを表示"
+  },
+  "show-camera": {
+    "type": "switch",
+    "default": true,
+    "description": "カメラを表示"
+  },
+  "show-audio": {
+    "type": "switch",
+    "default": true,
+    "description": "オーディオを表示"
+  },
+  "show-network": {
+    "type": "switch",
+    "default": true,
+    "description": "USBネットワークを表示"
+  },
+  "show-hub": {
+    "type": "switch",
+    "default": true,
+    "description": "USBハブを表示"
+  },
+  "show-other": {
+    "type": "switch",
+    "default": true,
+    "description": "その他を表示"
+  },
+  "show-count": {
+    "type": "switch",
+    "default": true,
+    "description": "パネルに機器数を表示"
+  },
+  "notify-changes": {
+    "type": "switch",
+    "default": false,
+    "description": "接続・切断を通知"
+  }
+}
